@@ -1,0 +1,61 @@
+provider "aws" {
+  region = "us-west-2"
+}
+resource "aws_instance" "ansible"{
+  ami = "ami-074251216af698218"
+  instance_type = "t2.micro"
+  key_name = "deployer-key"
+  vpc_security_group_ids = [aws_security_group.allowssh.id]
+  user_data = <<EOF
+#!/bin/bash
+apt-add-repository -y ppa:ansible/ansible
+apt-get update
+apt-get install -y ansible
+
+  EOF
+
+  tags = {
+    Name = "ansible"
+  }
+  
+}
+
+resource "aws_instance" "test" {
+  count = 2
+  ami = "ami-00ee4df451840fa9d"
+  instance_type = "t2.micro"
+  associate_public_ip_address = "false"
+  vpc_security_group_ids = [aws_security_group.allowssh.id]
+  key_name = "deployer-key"
+
+  tags = {
+    Name = "test"
+  }
+}
+
+resource "aws_security_group" "allowssh" {
+  name =  "allow ssh"
+  description = "allow ssh"
+
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  
+}
+
+
+resource "aws_key_pair" "my_access_key" {
+  key_name  = "deployer-key"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAABJQA****************************** rsa-key"
+}
